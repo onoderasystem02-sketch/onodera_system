@@ -3,7 +3,6 @@ import pandas as pd
 import pdfplumber
 import re
 import os
-import base64
 
 # 💡 画面を横いっぱいに広く使う設定
 st.set_page_config(layout="wide", page_title="小野寺システム お試しページ")
@@ -13,7 +12,7 @@ st.title("請求書の自動転記体験ホームページ")
 # ==========================================================
 # 📊 【画面の上半分】エクセル画面の再現
 # ==========================================================
-st.subheader("📊 集計用のExcelのイメージ")
+st.subheader("📊 現在開いているエクセルの画面")
 
 # 転記されたデータを記憶しておく箱（セッション状態）
 if "excel_rows" not in st.session_state:
@@ -25,14 +24,13 @@ if "excel_rows" not in st.session_state:
         {"行": 9, "計上日": "", "取引先": "", "項目": "", "数量": 0, "単位": "", "単価": 0, "金額（税抜）": 0, "消費税": 0, "合計（税込）": 0, "備考": ""}
     ]
 
-# 今見ているPDFを記憶しておく箱
 if "current_pdf" not in st.session_state:
     st.session_state.current_pdf = None
 
 # 表示用にきれいな表に変換
 df_display = pd.DataFrame(st.session_state.excel_rows)
 
-# ─── 📢 【修正】確実に対象の列名（全角文字）を直接指定して、文字を数字に変えてから合計します ───
+# ─── 確実に対象の列名を直接指定して合計します ───
 total_kingaku = pd.to_numeric(df_display["金額（税抜）"], errors='coerce').fillna(0).sum()
 total_zei = pd.to_numeric(df_display["消費税"], errors='coerce').fillna(0).sum()
 total_gokei = pd.to_numeric(df_display["合計（税込）"], errors='coerce').fillna(0).sum()
@@ -64,7 +62,7 @@ def to_int(v):
     if not v: return 0
     s = str(v).replace(',', '').replace('▲', '-').replace('△', '-')
     res = re.findall(r'-?\d+', s)
-    return int(res[0]) if res else 0
+    return int(res) if res else 0
 
 def run_analysis(pdf_file_obj):
     try:
@@ -111,7 +109,7 @@ def run_analysis(pdf_file_obj):
 
             # 3️⃣ それ以外の複雑な請求書（値引き対応） の場合
             else:
-                clean_vendor = re.sub(r'発行日[:：]?\d{4}/\d{2}/\d{2}|〒?\d{3}-\d{4}.*|(?:東京都|北海道|(?:京都|大阪)府|.{2,3}県).*|(?:請求|No|　|住所|TEL[:：]?.*)', '', "".join([w['text'] for w in words if w['x0'] > page.width * 0.55 and w['bottom'] < page.height * 0.3])).strip()
+                clean_vendor = re.sub(r'発行日[:：]?\d{4}/\d{2}/\d{2}|〒?\d{3}-\d_4}.*|(?:東京都|北海道|(?:京都|大阪)府|.{2,3}県).*|(?:請求|No|　|住所|TEL[:：]?.*)', '', "".join([w['text'] for w in words if w['x0'] > page.width * 0.55 and w['bottom'] < page.height * 0.3])).strip()
                 vendor_name = clean_vendor if clean_vendor else "株式会社 総合建築"
                 
                 for line in text_full.split('\n'):
@@ -154,44 +152,51 @@ def run_analysis(pdf_file_obj):
     except Exception as e:
         st.error(f"❌ 読み込みエラーが発生しました: {e}")
 
-# ==========================================================
-# 📄 【画面の下半分】お試しボタンとPDFの表示
-# ==========================================================
-st.subheader("📄 お試し用PDF請求書（ボタンを押すと自動転記＆PDF表示）")
+# 📢 最初からテキストとして中身を表示するための関数
+def get_pdf_preview_text(file_path):
+    if os.path.exists(file_path):
+        with pdfplumber.open(file_path) as pdf:
+            return pdf.pages[0].extract_text()
+    return "ファイルが読み込めません。"
 
-# 画面を3列に分けて、ボタンを横並びにする
+# ==========================================================
+# 📄 【画面の下半分】お試しボタンと請求書テキストの常時表示
+# ==========================================================
+st.subheader("📄 お試し用 請求書データ一覧（中身を見て転記ボタンを押してね）")
+st.info("💡 下の「⚡ この内容を転記する」を押すと、枠内のテキストデータが自動解析されて上のエクセルに入ります！")
+
 btn_col1, btn_col2, btn_col3 = st.columns(3)
 
 selected_file = None
 
 with btn_col1:
-    if st.button("🚀 Final_Const.pdf を試す\n（値引き・総合建築）", use_container_width=True):
+    st.write("### 🏢 株式会社 総合建築")
+    if st.button("⚡ この内容を転記する", key="btn1", use_container_width=True):
         if os.path.exists("Final_Const.pdf"): selected_file = "Final_Const.pdf"
-        else: st.error("❌ 'Final_Const.pdf' が見つかりません。")
+    
+    # 📢 最初からテキストとして請求書の中身を画面に常駐させる
+    st.text_area("📄 請求書テキスト（Final_Const.pdf）", value=get_pdf_preview_text("Final_Const.pdf"), height=300, disabled=True)
 
 with btn_col2:
-    if st.button("🚀 Final_IT.pdf を試す\n（小野寺ネットワークス）", use_container_width=True):
+    st.write("### 🌐 小野寺ネットワークス")
+    if st.button("⚡ この内容を転記する", key="btn2", use_container_width=True):
         if os.path.exists("Final_IT.pdf"): selected_file = "Final_IT.pdf"
-        else: st.error("❌ 'Final_IT.pdf' が見つかりません。")
+        
+    st.text_area("📄 請求書テキスト（Final_IT.pdf）", value=get_pdf_preview_text("Final_IT.pdf"), height=300, disabled=True)
 
 with btn_col3:
-    if st.button("🚀 Final_Mixed.pdf を試す\n（小野寺企画・軽減税率）", use_container_width=True):
+    st.write("### 🍳 小野寺企画・飲食事業部")
+    if st.button("⚡ この内容を転記する", key="btn3", use_container_width=True):
         if os.path.exists("Final_Mixed.pdf"): selected_file = "Final_Mixed.pdf"
-        else: st.error("❌ 'Final_Mixed.pdf' が見つかりません。")
+        
+    st.text_area("📄 請求書テキスト（Final_Mixed.pdf）", value=get_pdf_preview_text("Final_Mixed.pdf"), height=300, disabled=True)
 
-# ボタンが押されたら解析して、今見ているPDFの名前をセッションに記憶する
+# ボタンが押されたら解析して画面リフレッシュ
 if selected_file is not None:
     st.session_state.current_pdf = selected_file
     with open(selected_file, "rb") as f:
         run_analysis(f)
     st.rerun()
 
-# 📢 選択されている本物PDFを画面の下半分に埋め込んで表示する
-if st.session_state.current_pdf and os.path.exists(st.session_state.current_pdf):
-    st.markdown(f"### 📄 読み込み中のPDFプレビュー: `{st.session_state.current_pdf}`")
-    
-    with open(st.session_state.current_pdf, "rb") as f:
-        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-    
-    pdf_display_html = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="500" type="application/pdf" sandbox="allow-scripts allow-same-origin"></iframe>'
-    st.markdown(pdf_display_html, unsafe_allow_html=True)
+if st.session_state.current_pdf:
+    st.success(f"🎉 `{st.session_state.current_pdf}` の自動転記が正常に完了しました！")
