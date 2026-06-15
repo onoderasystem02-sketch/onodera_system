@@ -163,7 +163,7 @@ btn_col1, btn_col2, btn_col3 = st.columns(3)
 selected_file = None
 
 with btn_col1:
-    st.write("### 🏢 株式会社 総合建築")
+    st.write("### 🏢 株式会社 小野寺総合建築")
     if st.button("⚡ この内容を転記する", key="btn1", use_container_width=True):
         selected_file = "Final_Const.pdf"
     
