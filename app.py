@@ -62,7 +62,7 @@ def to_int(v):
     if not v: return 0
     s = str(v).replace(',', '').replace('▲', '-').replace('△', '-')
     res = re.findall(r'-?\d+', s)
-    return int(res) if res else 0
+    return int(res[0]) if res else 0
 
 def run_analysis(pdf_file_obj):
     try:
@@ -107,7 +107,7 @@ def run_analysis(pdf_file_obj):
                             "消費税": int(amt * tax_rate), "合計（税込）": amt + int(amt * tax_rate), "備考": ""
                         })
 
-            # 3️⃣ それ以外の複雑な請求書（値引き対応） の場合
+            # 3️⃣ それ以外の複雑な請求書（値引き対応） の場合 ─── 【ここから下が抜けていました！】
             else:
                 clean_vendor = re.sub(r'発行日[:：]?\d{4}/\d{2}/\d{2}|〒?\d{3}-\d{4}.*|(?:東京都|北海道|(?:京都|大阪)府|.{2,3}県).*|(?:請求|No|　|住所|TEL[:：]?.*)', '', "".join([w['text'] for w in words if w['x0'] > page.width * 0.55 and w['bottom'] < page.height * 0.3])).strip()
                 vendor_name = clean_vendor if clean_vendor else "株式会社 総合建築"
@@ -165,29 +165,30 @@ selected_file = None
 with btn_col1:
     st.write("### 🏢 株式会社 総合建築")
     if st.button("⚡ この内容を転記する", key="btn1", use_container_width=True):
-        if os.path.exists("Final_Const.pdf"): selected_file = "Final_Const.pdf"
+        selected_file = "Final_Const.pdf"
     
-    # 📢 指定された新しい日本語ファイル名「小野寺総合建築_請求書.png」を読み込みます
-    if os.path.exists("小野寺総合建築_請求書.png"):
-        st.image("小野寺総合建築_請求書.png", caption="株式会社 総合建築 の請求書見本", use_container_width=True)
+    # 画像ファイル名が部分一致でも表示されるように判定
+    matching_pngs = [f for f in os.listdir(".") if "総合建築" in f and f.endswith(".png")]
+    if matching_pngs:
+        st.image(matching_pngs[0], caption="株式会社 総合建築 の請求書見本", use_container_width=True)
 
 with btn_col2:
     st.write("### 🌐 (株)小野寺ネットワークス")
     if st.button("⚡ この内容を転記する", key="btn2", use_container_width=True):
-        if os.path.exists("Final_IT.pdf"): selected_file = "Final_IT.pdf"
+        selected_file = "Final_IT.pdf"
         
-    # 📢 指定された新しい日本語ファイル名「小野寺ネットワークス_請求書.png」を読み込みます
-    if os.path.exists("小野寺ネットワークス_請求書.png"):
-        st.image("小野寺ネットワークス_請求書.png", caption="(株)小野寺ネットワークス の請求書見本", use_container_width=True)
+    matching_pngs = [f for f in os.listdir(".") if "ネットワークス" in f and f.endswith(".png")]
+    if matching_pngs:
+        st.image(matching_pngs[0], caption="(株)小野寺ネットワークス の請求書見本", use_container_width=True)
 
 with btn_col3:
     st.write("### 🍳 小野寺企画・飲食事業部")
     if st.button("⚡ この内容を転記する", key="btn3", use_container_width=True):
-        if os.path.exists("Final_Mixed.pdf"): selected_file = "Final_Mixed.pdf"
+        selected_file = "Final_Mixed.pdf"
         
-    # 📢 指定された新しい日本語ファイル名「小野寺企画_請求書.png」を読み込みます
-    if os.path.exists("小野寺企画_請求書.png"):
-        st.image("小野寺企画_請求書.png", caption="小野寺企画・飲食事業部 の請求書見本", use_container_width=True)
+    matching_pngs = [f for f in os.listdir(".") if "企画" in f and f.endswith(".png")]
+    if matching_pngs:
+        st.image(matching_pngs[0], caption="小野寺企画・飲食事業部 の請求書見本", use_container_width=True)
 
 # ボタンが押されたら解析して画面リフレッシュ
 if selected_file is not None:
