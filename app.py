@@ -193,5 +193,5 @@ if st.session_state.current_pdf and os.path.exists(st.session_state.current_pdf)
     with open(st.session_state.current_pdf, "rb") as f:
         base64_pdf = base64.b64encode(f.read()).decode('utf-8')
     
-    pdf_display_html = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="500" type="application/pdf"></iframe>'
+    pdf_display_html = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="500" type="application/pdf" sandbox="allow-scripts allow-same-origin"></iframe>'
     st.markdown(pdf_display_html, unsafe_allow_html=True)
