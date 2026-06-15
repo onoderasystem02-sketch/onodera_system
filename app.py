@@ -12,7 +12,7 @@ st.title("請求書の自動転記体験ホームページ")
 # ==========================================================
 # 📊 【画面の上半分】エクセル画面の再現
 # ==========================================================
-st.subheader("📊 現在開いているエクセルの画面")
+st.subheader("📊 集計用のExcelのイメージ")
 
 # 転記されたデータを記憶しておく箱（セッション状態）
 if "excel_rows" not in st.session_state:
@@ -109,7 +109,7 @@ def run_analysis(pdf_file_obj):
 
             # 3️⃣ それ以外の複雑な請求書（値引き対応） の場合
             else:
-                clean_vendor = re.sub(r'発行日[:：]?\d{4}/\d{2}/\d{2}|〒?\d{3}-\d_4}.*|(?:東京都|北海道|(?:京都|大阪)府|.{2,3}県).*|(?:請求|No|　|住所|TEL[:：]?.*)', '', "".join([w['text'] for w in words if w['x0'] > page.width * 0.55 and w['bottom'] < page.height * 0.3])).strip()
+                clean_vendor = re.sub(r'発行日[:：]?\d{4}/\d{2}/\d{2}|〒?\d{3}-\d{4}.*|(?:東京都|北海道|(?:京都|大阪)府|.{2,3}県).*|(?:請求|No|　|住所|TEL[:：]?.*)', '', "".join([w['text'] for w in words if w['x0'] > page.width * 0.55 and w['bottom'] < page.height * 0.3])).strip()
                 vendor_name = clean_vendor if clean_vendor else "株式会社 総合建築"
                 
                 for line in text_full.split('\n'):
@@ -152,18 +152,11 @@ def run_analysis(pdf_file_obj):
     except Exception as e:
         st.error(f"❌ 読み込みエラーが発生しました: {e}")
 
-# 📢 最初からテキストとして中身を表示するための関数
-def get_pdf_preview_text(file_path):
-    if os.path.exists(file_path):
-        with pdfplumber.open(file_path) as pdf:
-            return pdf.pages[0].extract_text()
-    return "ファイルが読み込めません。"
-
 # ==========================================================
-# 📄 【画面の下半分】お試しボタンと請求書テキストの常時表示
+# 📄 【画面の下半分】お試しボタンと「画像」の常時表示
 # ==========================================================
-st.subheader("📄 お試し用 請求書データ一覧（中身を見て転記ボタンを押してね）")
-st.info("💡 下の「⚡ この内容を転記する」を押すと、枠内のテキストデータが自動解析されて上のエクセルに入ります！")
+st.subheader("📄 お試し用 請求書見本（ボタンを押すと自動転記されます）")
+st.info("💡 下の「⚡ この内容を転記する」ボタンを押すと、見本と同じデータが上のエクセル表に一瞬で入ります！")
 
 btn_col1, btn_col2, btn_col3 = st.columns(3)
 
@@ -174,22 +167,27 @@ with btn_col1:
     if st.button("⚡ この内容を転記する", key="btn1", use_container_width=True):
         if os.path.exists("Final_Const.pdf"): selected_file = "Final_Const.pdf"
     
-    # 📢 最初からテキストとして請求書の中身を画面に常駐させる
-    st.text_area("📄 請求書テキスト（Final_Const.pdf）", value=get_pdf_preview_text("Final_Const.pdf"), height=300, disabled=True)
+    # 📢 指定された新しい日本語ファイル名「小野寺総合建築_請求書.png」を読み込みます
+    if os.path.exists("小野寺総合建築_請求書.png"):
+        st.image("小野寺総合建築_請求書.png", caption="株式会社 総合建築 の請求書見本", use_container_width=True)
 
 with btn_col2:
-    st.write("### 🌐 小野寺ネットワークス")
+    st.write("### 🌐 (株)小野寺ネットワークス")
     if st.button("⚡ この内容を転記する", key="btn2", use_container_width=True):
         if os.path.exists("Final_IT.pdf"): selected_file = "Final_IT.pdf"
         
-    st.text_area("📄 請求書テキスト（Final_IT.pdf）", value=get_pdf_preview_text("Final_IT.pdf"), height=300, disabled=True)
+    # 📢 指定された新しい日本語ファイル名「小野寺ネットワークス_請求書.png」を読み込みます
+    if os.path.exists("小野寺ネットワークス_請求書.png"):
+        st.image("小野寺ネットワークス_請求書.png", caption="(株)小野寺ネットワークス の請求書見本", use_container_width=True)
 
 with btn_col3:
     st.write("### 🍳 小野寺企画・飲食事業部")
     if st.button("⚡ この内容を転記する", key="btn3", use_container_width=True):
         if os.path.exists("Final_Mixed.pdf"): selected_file = "Final_Mixed.pdf"
         
-    st.text_area("📄 請求書テキスト（Final_Mixed.pdf）", value=get_pdf_preview_text("Final_Mixed.pdf"), height=300, disabled=True)
+    # 📢 指定された新しい日本語ファイル名「小野寺企画_請求書.png」を読み込みます
+    if os.path.exists("小野寺企画_請求書.png"):
+        st.image("小野寺企画_請求書.png", caption="小野寺企画・飲食事業部 の請求書見本", use_container_width=True)
 
 # ボタンが押されたら解析して画面リフレッシュ
 if selected_file is not None:
@@ -199,4 +197,4 @@ if selected_file is not None:
     st.rerun()
 
 if st.session_state.current_pdf:
-    st.success(f"🎉 `{st.session_state.current_pdf}` の自動転記が正常に完了しました！")
+    st.success("🎉 請求書の自動転記が正常に完了しました！上のエクセル表をご確認ください。")
